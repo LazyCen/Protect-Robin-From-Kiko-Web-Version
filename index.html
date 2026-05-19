@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+		<title>Protect Robin from Kiko</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@700;800&display=swap" rel="stylesheet">
+		<script src="coi-serviceworker.js"></script>
+		<style>
+html, body {
+	margin: 0;
+	border: 0 none;
+	padding: 0;
+	text-align: center;
+	background-color: #0b0b0d;
+	width: 100%;
+	height: 100%;
+	height: 100dvh;
+	overflow: hidden;
+	touch-action: none;
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+#canvas {
+	display: block;
+	margin: 0;
+	color: white;
+	width: 100%;
+	height: 100%;
+	height: 100dvh;
+}
+
+#canvas:focus {
+	outline: none;
+}
+
+.godot {
+	font-family: 'Inter', sans-serif;
+	color: #ef4444;
+	background-color: #1c1917;
+	border: 1px solid #7f1d1d;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+	border-radius: 8px;
+}
+
+/* Portrait Warning CSS */
+#portrait-warning {
+	display: none;
+}
+
+@media screen and (orientation: portrait) {
+	#portrait-warning {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		height: 100dvh;
+		background: linear-gradient(135deg, #18181b 0%, #09090b 100%);
+		z-index: 99999;
+		color: #ffffff;
+		font-family: 'Outfit', 'Inter', sans-serif;
+		text-align: center;
+		padding: 24px;
+		box-sizing: border-box;
+	}
+
+	.phone-icon-container {
+		width: 100px;
+		height: 100px;
+		margin-bottom: 24px;
+		position: relative;
+	}
+
+	.phone-icon {
+		width: 40px;
+		height: 80px;
+		border: 4px solid #f97316;
+		border-radius: 8px;
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%) rotate(0deg);
+		animation: rotatePhone 2.5s ease-in-out infinite;
+	}
+
+	.phone-icon::after {
+		content: '';
+		position: absolute;
+		bottom: 6px;
+		left: 50%;
+		transform: translateX(-50%);
+		width: 8px;
+		height: 8px;
+		background-color: #f97316;
+		border-radius: 50%;
+	}
+
+	@keyframes rotatePhone {
+		0% {
+			transform: translate(-50%, -50%) rotate(0deg);
+		}
+		30%, 70% {
+			transform: translate(-50%, -50%) rotate(90deg);
+		}
+		100% {
+			transform: translate(-50%, -50%) rotate(90deg);
+		}
+	}
+
+	.warning-title {
+		font-size: 24px;
+		font-weight: 700;
+		margin: 0 0 12px 0;
+		background: linear-gradient(to right, #f97316, #ef4444);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+	}
+
+	.warning-text {
+		font-size: 16px;
+		color: #a1a1aa;
+		max-width: 280px;
+		line-height: 1.5;
+		margin: 0;
+	}
+}
+
+/* Premium Loading Screen CSS */
+#status {
+	position: fixed;
+	left: 0;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background: radial-gradient(circle at center, #18181b 0%, #09090b 100%);
+	z-index: 10000;
+}
+
+#status-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 32px;
+	border-radius: 24px;
+	background: rgba(255, 255, 255, 0.02);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7);
+	max-width: 400px;
+	width: 85%;
+	box-sizing: border-box;
+}
+
+.game-logo {
+	font-family: 'Outfit', sans-serif;
+	font-size: 26px;
+	font-weight: 800;
+	margin-bottom: 24px;
+	background: linear-gradient(135deg, #fb923c 0%, #ef4444 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	text-shadow: 0 4px 20px rgba(249, 115, 22, 0.15);
+	letter-spacing: -0.5px;
+	text-align: center;
+}
+
+#status-progress {
+	width: 100%;
+	height: 10px;
+	background-color: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+	border-radius: 9999px;
+	overflow: hidden;
+	position: relative;
+	margin-bottom: 14px;
+}
+
+#status-progress-inner {
+	height: 100%;
+	width: 0;
+	background: linear-gradient(90deg, #f97316, #ec4899);
+	box-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+	border-radius: 9999px;
+	transition: width 0.1s ease-out;
+}
+
+#status-text {
+	font-family: 'Inter', sans-serif;
+	font-size: 13px;
+	color: #d4d4d8;
+	margin-bottom: 20px;
+	font-weight: 600;
+	letter-spacing: 0.5px;
+	text-align: center;
+}
+
+#status-tip {
+	font-family: 'Inter', sans-serif;
+	font-size: 11px;
+	color: #71717a;
+	text-align: center;
+	line-height: 1.6;
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	padding-top: 16px;
+	margin-top: 8px;
+	width: 100%;
+}
+
+#status-indeterminate {
+	height: 40px;
+	width: 40px;
+	position: relative;
+	margin: 10px 0;
+}
+
+#status-indeterminate > div {
+	width: 6px;
+	height: 6px;
+	background-color: #f97316;
+	border-radius: 50%;
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform-origin: 0 0;
+	animation: orbit 1.2s linear infinite;
+}
+
+#status-indeterminate > div:nth-child(1) { transform: rotate(0deg) translate(16px); animation-delay: -1.05s; }
+#status-indeterminate > div:nth-child(2) { transform: rotate(45deg) translate(16px); animation-delay: -0.9s; }
+#status-indeterminate > div:nth-child(3) { transform: rotate(90deg) translate(16px); animation-delay: -0.75s; }
+#status-indeterminate > div:nth-child(4) { transform: rotate(135deg) translate(16px); animation-delay: -0.6s; }
+#status-indeterminate > div:nth-child(5) { transform: rotate(180deg) translate(16px); animation-delay: -0.45s; }
+#status-indeterminate > div:nth-child(6) { transform: rotate(225deg) translate(16px); animation-delay: -0.3s; }
+#status-indeterminate > div:nth-child(7) { transform: rotate(270deg) translate(16px); animation-delay: -0.15s; }
+#status-indeterminate > div:nth-child(8) { transform: rotate(315deg) translate(16px); animation-delay: 0s; }
+
+@keyframes orbit {
+	0% { opacity: 1; }
+	100% { opacity: 0.15; }
+}
+
+#status-notice {
+	margin: 10px 0;
+	line-height: 1.4;
+	padding: 12px;
+	font-size: 13px;
+	max-width: 320px;
+	word-break: break-word;
+	text-align: left;
+}
+		</style>
+		<link id='-gd-engine-icon' rel='icon' type='image/png' href='engine/images/index.icon.png' />
+		<link rel='apple-touch-icon' href='engine/images/index.apple-touch-icon.png'/>
+
+	</head>
+	<body>
+		<div id="portrait-warning">
+			<div class="phone-icon-container">
+				<div class="phone-icon"></div>
+			</div>
+			<div class="warning-title">Protect Robin from Kiko</div>
+			<div class="warning-text">Please rotate your device to landscape mode to play.</div>
+		</div>
+
+		<canvas id="canvas">
+			HTML5 canvas appears to be unsupported in the current browser.<br >
+			Please try updating or use a different browser.
+		</canvas>
+		<div id="status">
+			<div id="status-container">
+				<div class="game-logo">Protect Robin from Kiko</div>
+				<div id="status-progress" style="display: none;" oncontextmenu="event.preventDefault();">
+					<div id="status-progress-inner"></div>
+				</div>
+				<div id="status-text">Initializing engine...</div>
+				<div id="status-tip">Tip: Drag the lollipop to Robin before he gets too sad!</div>
+				<div id="status-indeterminate" style="display: none;" oncontextmenu="event.preventDefault();">
+					<div></div>
+					<div></div>
+					<div></div>
+					<div></div>
+					<div></div>
+					<div></div>
+					<div></div>
+					<div></div>
+				</div>
+				<div id="status-notice" class="godot" style="display: none;"></div>
+			</div>
+		</div>
+
+		<script src="engine/js/index.js"></script>
+		<script>
+		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"executable":"engine/bin/index","experimentalVK":false,"fileSizes":{"engine/bin/index.pck":8853680,"engine/bin/index.wasm":48954223},"focusCanvas":true,"gdextensionLibs":[]};
+const engine = new Engine(GODOT_CONFIG);
+
+(function () {
+	const statusProgress = document.getElementById('status-progress');
+	const statusProgressInner = document.getElementById('status-progress-inner');
+	const statusIndeterminate = document.getElementById('status-indeterminate');
+	const statusNotice = document.getElementById('status-notice');
+	const statusText = document.getElementById('status-text');
+	const statusTip = document.getElementById('status-tip');
+
+	let initializing = true;
+	let statusMode = 'hidden';
+
+	function setStatusMode(mode) {
+		if (statusMode === mode || !initializing) {
+			return;
+		}
+		[statusProgress, statusIndeterminate, statusNotice].forEach((elem) => {
+			if (elem) elem.style.display = 'none';
+		});
+		if (statusText) statusText.style.display = 'none';
+		if (statusTip) statusTip.style.display = 'none';
+
+		switch (mode) {
+		case 'progress':
+			if (statusProgress) statusProgress.style.display = 'block';
+			if (statusText) statusText.style.display = 'block';
+			if (statusTip) statusTip.style.display = 'block';
+			break;
+		case 'indeterminate':
+			if (statusIndeterminate) statusIndeterminate.style.display = 'block';
+			if (statusText) {
+				statusText.innerText = "Initializing engine...";
+				statusText.style.display = 'block';
+			}
+			break;
+		case 'notice':
+			if (statusNotice) statusNotice.style.display = 'block';
+			break;
+		case 'hidden':
+			const statusDiv = document.getElementById('status');
+			if (statusDiv) {
+				statusDiv.style.transition = 'opacity 0.5s ease';
+				statusDiv.style.opacity = '0';
+				setTimeout(() => {
+					statusDiv.style.display = 'none';
+				}, 500);
+			}
+			break;
+		default:
+			throw new Error('Invalid status mode');
+		}
+		statusMode = mode;
+	}
+
+	function setStatusNotice(text) {
+		while (statusNotice.lastChild) {
+			statusNotice.removeChild(statusNotice.lastChild);
+		}
+		const lines = text.split('\n');
+		lines.forEach((line) => {
+			statusNotice.appendChild(document.createTextNode(line));
+			statusNotice.appendChild(document.createElement('br'));
+		});
+	}
+
+	function displayFailureNotice(err) {
+		const msg = err.message || err;
+		console.error(msg);
+		setStatusNotice(msg);
+		setStatusMode('notice');
+		initializing = false;
+	}
+
+	const missing = Engine.getMissingFeatures();
+	if (missing.length !== 0) {
+		const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
+		displayFailureNotice(missingMsg + missing.join('\n'));
+	} else {
+		setStatusMode('indeterminate');
+		engine.startGame({
+			'onProgress': function (current, total) {
+				if (total > 0) {
+					const pct = (current / total) * 100;
+					if (statusProgressInner) {
+						statusProgressInner.style.width = `${pct}%`;
+					}
+					if (statusText) {
+						const loadedMB = (current / (1024 * 1024)).toFixed(1);
+						const totalMB = (total / (1024 * 1024)).toFixed(1);
+						statusText.innerText = `Downloading... ${Math.round(pct)}% (${loadedMB}MB / ${totalMB}MB)`;
+					}
+					setStatusMode('progress');
+					if (current === total) {
+						// wait for progress bar animation
+						setTimeout(() => {
+							setStatusMode('indeterminate');
+						}, 500);
+					}
+				} else {
+					setStatusMode('indeterminate');
+				}
+			},
+		}).then(() => {
+			setStatusMode('hidden');
+			initializing = false;
+		}, displayFailureNotice);
+	}
+}());
+		</script>
+	</body>
+</html>
+
