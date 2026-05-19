@@ -334,14 +334,17 @@ const engine = new Engine(GODOT_CONFIG);
 
 		switch (mode) {
 		case 'progress':
-			if (statusProgress) statusProgress.style.display = 'block';
-			if (statusText) statusText.style.display = 'block';
+			if (statusIndeterminate) statusIndeterminate.style.display = 'block';
+			if (statusText) {
+				statusText.innerText = "Loading...";
+				statusText.style.display = 'block';
+			}
 			if (statusTip) statusTip.style.display = 'block';
 			break;
 		case 'indeterminate':
 			if (statusIndeterminate) statusIndeterminate.style.display = 'block';
 			if (statusText) {
-				statusText.innerText = "Initializing engine...";
+				statusText.innerText = "Loading...";
 				statusText.style.display = 'block';
 			}
 			break;
@@ -391,26 +394,7 @@ const engine = new Engine(GODOT_CONFIG);
 		setStatusMode('indeterminate');
 		engine.startGame({
 			'onProgress': function (current, total) {
-				if (total > 0) {
-					const pct = (current / total) * 100;
-					if (statusProgressInner) {
-						statusProgressInner.style.width = `${pct}%`;
-					}
-					if (statusText) {
-						const loadedMB = (current / (1024 * 1024)).toFixed(1);
-						const totalMB = (total / (1024 * 1024)).toFixed(1);
-						statusText.innerText = `Downloading... ${Math.round(pct)}% (${loadedMB}MB / ${totalMB}MB)`;
-					}
-					setStatusMode('progress');
-					if (current === total) {
-						// wait for progress bar animation
-						setTimeout(() => {
-							setStatusMode('indeterminate');
-						}, 500);
-					}
-				} else {
-					setStatusMode('indeterminate');
-				}
+				setStatusMode('progress');
 			},
 		}).then(() => {
 			setStatusMode('hidden');
